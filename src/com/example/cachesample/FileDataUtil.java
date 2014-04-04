@@ -15,88 +15,118 @@ import android.os.Environment;
 import android.util.Log;
 
 public class FileDataUtil {
-public static Bitmap loadBitmap(String fileName) throws IOException {
-	      Bitmap result = null;
+	public static Bitmap loadBitmap(String fileName) throws IOException {
+		Bitmap result = null;
 
-	      FileInputStream fileInput = null;
-	      BufferedInputStream bufInput = null;
-	      try {
-	         fileInput = new FileInputStream(fileName);
-	         bufInput = new BufferedInputStream(fileInput);
-	         result = BitmapFactory.decodeStream(bufInput);
-	      } finally {
-	         if (fileInput != null) {
-	            try {
-	               fileInput.close();
-	            } catch (IOException e) {
-	            }
-	         }
-	         if (bufInput != null) {
-	            try {
-	               bufInput.close();
-	            } catch (IOException e) {
-	            }
-	         }
-	      }
-	      return result;
-	   }
-	   //--‚±‚±‚Ü‚Å ---------------------------------------------------------
+		FileInputStream fileInput = null;
+		BufferedInputStream bufInput = null;
+		try {
+			fileInput = new FileInputStream(fileName);
+			bufInput = new BufferedInputStream(fileInput);
 
-	   /**
-	    * ƒAƒvƒŠƒP[ƒVƒ‡ƒ“•Û‘¶ƒfƒBƒŒƒNƒgƒŠ‚É‘¶İ‚·‚é‰æ‘œƒtƒ@ƒCƒ‹‚ğæ“¾‚·‚éB
-	    * @return ‰æ‘œƒtƒ@ƒCƒ‹ƒŠƒXƒg (‘¶İ‚µ‚È‚¢ê‡‚Í‹ó‚ÌƒŠƒXƒg)
-	    */
-	   public static List<File> getApplicationBitmapFileList(Context context)
-	                                                                  throws IOException {
-	      List<File> result = new ArrayList<File>();;
+			//èª­ã¿è¾¼ã‚€ã‚µã‚¤ã‚ºã‚’æ±ºå®š
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inJustDecodeBounds = true;
+			//ã‚µã‚¤ã‚ºã®ã¿ã‚’èª­ã¿è¾¼ã‚€ãŸã‚ã«ãƒ‡ã‚³ãƒ¼ãƒ‰
+			BitmapFactory.decodeFile(fileName, options);
+			int sample = calculateInSampleSize(options, 100, 100);
+			//Log.d("cachesample", "sample = " + sample);
+		    options.inSampleSize = sample;
+			options.inJustDecodeBounds = false;
+			//æ±ºå®šã—ãŸã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã§èª­ã¿è¾¼ã‚€
+			result = BitmapFactory.decodeStream(bufInput, null, options);
+	         
+		} finally {
+			if (fileInput != null) {
+				try {
+					fileInput.close();
+				} catch (IOException e) {
+				}
+			}
+			if (bufInput != null) {
+				try {
+					bufInput.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+		return result;
+	}
+	
+	public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+		// Raw height and width of image
+		final int height = options.outHeight;
+		final int width = options.outWidth;
+		int inSampleSize = 1;
 
-	      File sdcardRoot = getSdCardRootDirectory();
-	      File loadDir = new File(sdcardRoot, /*context.getPackageName()*/"ContShooting");
-	      Log.d("GallerySample", loadDir.getPath());
-	      if (!loadDir.exists()) {
-	         throw new IOException(
-	            String.format("ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ì•Û‘¶æ‚ª‘¶İ‚µ‚Ü‚¹‚ñ(%s)", loadDir));
-	      }
-	      if (!loadDir.canRead()) {
-	         throw new IOException(
-	            String.format("ƒtƒ@ƒCƒ‹‚ğ“Ç‚İo‚µ‚Å‚«‚Ü‚¹‚ñ(%s)", loadDir));
-	      }
+	    //Log.d("cachesample", "size = " + height + "," + width);
 
-	      // ƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒfƒBƒŒƒNƒgƒŠ‚Ì‰æ‘œƒtƒ@ƒCƒ‹‚ğæ“¾
-	      File[] files = loadDir.listFiles(new FilenameFilter() {
+		if (height > reqHeight || width > reqWidth) {
 
-	         // ‰æ‘œƒtƒ@ƒCƒ‹‚Ì‚İ‚ğ‘ÎÛ‚Æ‚·‚é(*.PNG(*.png) or *.JPEG(*.jpeg))
-	         public boolean accept(File loadDir, String fileName) {
-	            // CompressFormat
+			final int halfHeight = height / 2;
+			final int halfWidth = width / 2;
+
+			// Calculate the largest inSampleSize value that is a power of 2 and keeps both
+			// height and width larger than the requested height and width.
+			while ((halfHeight / inSampleSize) > reqHeight && (halfWidth / inSampleSize) > reqWidth) {
+				inSampleSize *= 2;
+			}
+		}
+
+		return inSampleSize;
+	}
+
+	/**
+	 * ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ä¿å­˜ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«å­˜åœ¨ã™ã‚‹ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«ã‚’å–å¾—ã™ã‚‹ã€‚
+	 * @return ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«ãƒªã‚¹ãƒˆ (å­˜åœ¨ã—ãªã„å ´åˆã¯ç©ºã®ãƒªã‚¹ãƒˆ)
+	 */
+	public static List<File> getApplicationBitmapFileList(Context context) throws IOException {
+		List<File> result = new ArrayList<File>();;
+
+		File sdcardRoot = getSdCardRootDirectory();
+		File loadDir = new File(sdcardRoot, /*context.getPackageName()*/"ContShooting");
+		Log.d("GallerySample", loadDir.getPath());
+		if (!loadDir.exists()) {
+			throw new IOException(String.format("ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ä¿å­˜å…ˆãŒå­˜åœ¨ã—ã¾ã›ã‚“(%s)", loadDir));
+		}
+		if (!loadDir.canRead()) {
+			throw new IOException(String.format("ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿å‡ºã—ã§ãã¾ã›ã‚“(%s)", loadDir));
+		}
+
+		// ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«ã‚’å–å¾—
+		File[] files = loadDir.listFiles(new FilenameFilter() {
+
+			// ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«ã®ã¿ã‚’å¯¾è±¡ã¨ã™ã‚‹(*.PNG(*.png) or *.JPEG(*.jpeg))
+			public boolean accept(File loadDir, String fileName) {
+				// CompressFormat
 	            //   JPEG = new CompressFormat("JPEG", 0);
 	            //   PNG = new CompressFormat("PNG", 1);
-	            return fileName.matches(".+\\.(PNG|png|JPEG|jpeg|JPG|jpg)$");
-	         }
-	      });
-	      // ƒƒCƒ“‘¤‚Åˆµ‚¢‚â‚·‚¢‚æ‚¤‚ÉƒŠƒXƒg‚É•ÏŠ·‚µ‚Ä‚¢‚Ü‚·
-	      if (files != null && files.length > 0) {
-	         for (File item : files) {
-	            result.add(item);
-	         }
-	      }
-	      return result;
-	   }
+				return fileName.matches(".+\\.(PNG|png|JPEG|jpeg|JPG|jpg)$");
+			}
+		});
+		// ãƒ¡ã‚¤ãƒ³å´ã§æ‰±ã„ã‚„ã™ã„ã‚ˆã†ã«ãƒªã‚¹ãƒˆã«å¤‰æ›ã—ã¦ã„ã¾ã™
+		if (files != null && files.length > 0) {
+			for (File item : files) {
+				result.add(item);
+			}
+		}
+		return result;
+	}
 
-	   /**
-	    * ŠO•”ƒƒfƒBƒAƒfƒBƒŒƒNƒgƒŠ‚ğæ“¾‚·‚éB
-	    * @return ŠO•”ƒƒfƒBƒAƒfƒBƒŒƒNƒgƒŠ (/sdcard/)
-	    * @throws IOException ƒƒfƒBƒAƒGƒ‰[
-	    */
-	   public static File getSdCardRootDirectory() throws IOException {
-	      // SDƒJ[ƒh‚ªƒ}ƒEƒ“ƒg‚³‚ê‚Ä‚¢‚é‚©
-	      if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-	         throw new IOException(String.format("ƒƒfƒBƒA‚ªƒZƒbƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñ(%s)",
-	               Environment.getExternalStorageState()));
-	      }
-	      File root = Environment.getExternalStorageDirectory();
-	      if (root == null) {
-	         throw new IOException("ƒƒfƒBƒA‚ª—˜—p‚Å‚«‚Ü‚¹‚ñ");
-	      }
-	      return root;
-	   }
+	/**
+	 * å¤–éƒ¨ãƒ¡ãƒ‡ã‚£ã‚¢ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’å–å¾—ã™ã‚‹ã€‚
+	 * @return å¤–éƒ¨ãƒ¡ãƒ‡ã‚£ã‚¢ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª (/sdcard/)
+	 * @throws IOException ãƒ¡ãƒ‡ã‚£ã‚¢ã‚¨ãƒ©ãƒ¼
+	 */
+	public static File getSdCardRootDirectory() throws IOException {
+		// SDã‚«ãƒ¼ãƒ‰ãŒãƒã‚¦ãƒ³ãƒˆã•ã‚Œã¦ã„ã‚‹ã‹
+		if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+			throw new IOException(String.format("ãƒ¡ãƒ‡ã‚£ã‚¢ãŒã‚»ãƒƒãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“(%s)", Environment.getExternalStorageState()));
+		}
+		File root = Environment.getExternalStorageDirectory();
+		if (root == null) {
+			throw new IOException("ãƒ¡ãƒ‡ã‚£ã‚¢ãŒåˆ©ç”¨ã§ãã¾ã›ã‚“");
+		}
+		return root;
+	}
 }

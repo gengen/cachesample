@@ -10,17 +10,17 @@ import android.graphics.BitmapFactory;
 import android.support.v4.content.AsyncTaskLoader;
 
 /**
- * {@link Bitmap} ‚ğ”ñ“¯Šú‚Å“Ç‚İ‚Ş {@link AsyncTaskLoader}.
+ * {@link Bitmap} ã‚’éåŒæœŸã§èª­ã¿è¾¼ã‚€ {@link AsyncTaskLoader}.
  */
 public class ImageLoader extends AsyncTaskLoader<Bitmap> {
 
-    /** ‘ÎÛ‚ÌƒAƒCƒeƒ€. */
+    /** å¯¾è±¡ã®ã‚¢ã‚¤ãƒ†ãƒ . */
     public ImageItem item;
     Context mContext;
     List<File> imageFileList;
 
     /**
-     * ƒRƒ“ƒXƒgƒ‰ƒNƒ^.
+     * ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿.
      * @param context {@link Context}
      * @param item {@link ImageItem}
      */
@@ -42,7 +42,6 @@ public class ImageLoader extends AsyncTaskLoader<Bitmap> {
 
     @Override
     public Bitmap loadInBackground() {
-        //return BitmapFactory.decodeResource(getContext().getResources(), R.drawable.item);
     	return getBitmap(item.id);
     }
     
@@ -52,7 +51,6 @@ public class ImageLoader extends AsyncTaskLoader<Bitmap> {
 		try {
 			bitmap = FileDataUtil.loadBitmap(item.toString());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

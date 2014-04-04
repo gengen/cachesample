@@ -1,33 +1,47 @@
 package com.example.cachesample;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.Loader;
 import android.support.v4.util.LruCache;
 import android.util.Log;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
+import android.widget.AbsListView.MultiChoiceModeListener;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.GridView;
 import android.widget.ImageView;
 
 /**
- * GridView ‚ğ•\¦‚·‚é {@link Activity}.
+ * GridView ã‚’è¡¨ç¤ºã™ã‚‹ {@link Activity}.
  */
 public class MainActivity extends FragmentActivity {
 
-    /** ƒƒOo—Í—p‚Ìƒ^ƒO. */
+    /** ãƒ­ã‚°å‡ºåŠ›ç”¨ã®ã‚¿ã‚°. */
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    /** ƒƒ‚ƒŠƒLƒƒƒbƒVƒ…ƒNƒ‰ƒX. */
+    /** ãƒ¡ãƒ¢ãƒªã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚¯ãƒ©ã‚¹. */
     private LruCache<String, Bitmap> mLruCache;
     /** {@link GridView}. */
     private GridView mGridView;
@@ -35,58 +49,90 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        mGridView = new GridView(this);
+        
+        setContentView(R.layout.activity_main);
+        mGridView = (GridView)findViewById(R.id.gridview);
         mGridView.setNumColumns(2);
-        setContentView(mGridView);
+        
+        //è¤‡æ•°é¸æŠè¨­å®š
+        mGridView.setChoiceMode(GridView.CHOICE_MODE_MULTIPLE_MODAL);
+        mGridView.setMultiChoiceModeListener(new MultiChoiceModeListener(){
+			@Override
+			public boolean onActionItemClicked(ActionMode arg0, MenuItem arg1) {
+				Log.d(TAG, "onActionItemClicked");
+				return true;
+			}
 
-        // LruCache ‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‰»
-        int maxSize = 5 * 1024 * 1024;
-        mLruCache = new LruCache<String, Bitmap>(maxSize) {
+			@Override
+			public boolean onCreateActionMode(ActionMode arg0, Menu arg1) {
+				Log.d(TAG, "onCreateActionMode");
+				return true;
+			}
+
+			@Override
+			public void onDestroyActionMode(ActionMode arg0) {
+				Log.d(TAG, "onDestroyActionMode");
+			}
+
+			@Override
+			public boolean onPrepareActionMode(ActionMode arg0, Menu arg1) {
+				Log.d(TAG, "onPrepareActionMode");
+				return true;
+			}
+
+			@Override
+			public void onItemCheckedStateChanged(ActionMode mode, int pos, long id, boolean checked) {
+				Log.d(TAG, "onItemCheckedStateChanged");
+				int count = mGridView.getCheckedItemCount();
+				Log.d(TAG, "check count = " + count);
+				
+				ImageAdapter adapter = (ImageAdapter)mGridView.getAdapter();
+				ImageItem item = adapter.getItem(pos);
+				ImageView view = (ImageView)mGridView.findViewWithTag(item);
+				//TODO ãªãœã‹æœ€åˆã«é¸æŠã—ãŸé …ç›®ãŒé»’ããªã‚‰ãªã„ã€‚è¦èª¿æŸ»ã€‚
+				//TODO ApiDemosã®Viewsã®Gridã®Selection Modeã‚’å‚è€ƒã«å®Ÿè£…ã™ã‚‹ã“ã¨ã€‚
+				view.setBackgroundColor(Color.BLACK);
+			}
+        	
+        });
+
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+
+        // Use 1/8th of the available memory for this memory cache.
+        final int cacheSize = maxMemory / 8;
+        mLruCache = new LruCache<String, Bitmap>(cacheSize) {
             @Override
             protected int sizeOf(String key, Bitmap value) {
                 return value.getRowBytes() * value.getHeight();
+            	//return value.getByteCount();
             }
         };
 
-        // Adapter ‚Ìì¬‚ÆƒAƒCƒeƒ€‚Ì’Ç‰Á
+        // Adapter ã®ä½œæˆã¨ã‚¢ã‚¤ãƒ†ãƒ ã®è¿½åŠ 
 		List<File> imageFileList = null;
 		try {
 			imageFileList = FileDataUtil.getApplicationBitmapFileList(this);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		ImageAdapter adapter = new ImageAdapter(this);
+		//ImageAdapter adapter = new ImageAdapter(this, android.R.layout.simple_selectable_list_item);
         mGridView.setAdapter(adapter);
-        //TODO NullPointer
-        Log.d("cachesample", "size = " + imageFileList.size());
+        //Log.d("cachesample", "size = " + imageFileList.size());
         for (int i = 0; i < imageFileList.size(); i++) {
             ImageItem item = new ImageItem();
-            //item.key = "item" + String.valueOf(i);
             item.id = i;
+            item.path = imageFileList.get(i).getPath();
+            
             adapter.add(item);
         }
-        
-        /*
-        MyAdapter mapAdapter = new MyAdapter(this);
-		mGridView.setAdapter(mapAdapter);
-
-		// ƒAƒvƒŠ‚Å•Û‘¶‚µ‚½‰æ‘œ‚ğ‰æ‘œƒŠƒXƒgƒAƒ_ƒvƒ^[‚Éƒ[ƒh‚·‚é
-		loadMapImage(mapAdapter);
-
-		// ‰æ‘œƒ[ƒh‚É‚æ‚èƒf[ƒ^‚ª•ÏX‚³‚ê‚½‚±‚Æ‚ğ’Ê’m‚·‚é
-		//  ¦‚±‚ê‚ğ‚µ‚È‚¢‚ÆƒMƒƒƒ‰ƒŠ[‚ª•\¦‚³‚ê‚È‚¢
-		mapAdapter.notifyDataSetChanged();
-		*/
 		
-        // onScrollListener ‚ÌÀ‘•
         mGridView.setOnScrollListener(new OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
                 if (scrollState == SCROLL_STATE_IDLE) {
-                    // ƒXƒNƒ[ƒ‹‚ª~‚Ü‚Á‚½‚Æ‚«‚É“Ç‚İ‚Ş
+                    // ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãŒæ­¢ã¾ã£ãŸã¨ãã«èª­ã¿è¾¼ã‚€
                     loadBitmap();
                 }
             }
@@ -94,30 +140,84 @@ public class MainActivity extends FragmentActivity {
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
             }
         });
+        
+        mGridView.setOnItemClickListener(new OnItemClickListener() {
+            //é¸æŠã§ImageViewã«æ‹¡å¤§è¡¨ç¤º
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                ImageAdapter adapter = (ImageAdapter)mGridView.getAdapter();
+                ImageItem item = adapter.getItem(position);
+                
+                //Log.d(TAG, "path = " + item.path);
+                
+        		FileInputStream fileInput = null;
+        		BufferedInputStream bufInput = null;
+				try {
+					fileInput = new FileInputStream(item.path);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+                bufInput = new BufferedInputStream(fileInput);
+    			Bitmap bmp = BitmapFactory.decodeStream(bufInput);
 
+    			ImageView view = (ImageView)findViewById(R.id.image);
+                view.setImageBitmap(bmp);
+            }
+        });
+
+        /*
+        Thread thread = new Thread(new Runnable(){
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				Looper.prepare();
+				loadBitmap();
+			}
+        });
+        thread.start();
+        */
         loadBitmap();
     }
 
     /**
-     * ‰æ‘œ‚ğ“Ç‚İ‚Ş.
+     * ç”»åƒã‚’èª­ã¿è¾¼ã‚€.
      */
     private void loadBitmap() {
-        // Œ»İ‚Ì•\¦‚³‚ê‚Ä‚¢‚éƒAƒCƒeƒ€‚Ì‚İƒŠƒNƒGƒXƒg‚·‚é
+        // ç¾åœ¨ã®è¡¨ç¤ºã•ã‚Œã¦ã„ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ã®ã¿ãƒªã‚¯ã‚¨ã‚¹ãƒˆã™ã‚‹
         ImageAdapter adapter = (ImageAdapter) mGridView.getAdapter();
         int first = mGridView.getFirstVisiblePosition();
         int count = mGridView.getChildCount();
+        
+        //èµ·å‹•æ™‚countãŒ0ã«ãªã£ã¦ã—ã¾ã†ãŸã‚ã€å¯¾å‡¦
+        int realCount = mGridView.getCount();
+        if(count == 0 && realCount == 0){
+        	count = 0;
+        }
+        else if(count == 0 && realCount != 0){
+        	//20ä»¶ä»¥ä¸Šã‚ã‚‹å ´åˆã¯åˆå›ã¯20ä»¶è¡¨ç¤º
+        	if(realCount < 20){
+        		count = realCount;
+        	}
+        	else{
+        		count = 20;
+        	}
+        }
+        
         for (int i = 0; i < count; i++) {
             ImageItem item = adapter.getItem(i + first);
-            // ƒLƒƒƒbƒVƒ…‚Ì‘¶İŠm”F
+            // ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã®å­˜åœ¨ç¢ºèª
             Bitmap bitmap = mLruCache.get("" + item.id);
             if (bitmap != null) {
-                // ƒLƒƒƒbƒVƒ…‚É‘¶İ
-                Log.i(TAG, "ƒLƒƒƒbƒVƒ…‚ ‚è=" + item.id);
+                // ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«å­˜åœ¨
+                //Log.i(TAG, "ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚ã‚Š=" + item.id);
                 setBitmap(item);
                 mGridView.invalidateViews();
             } else {
-                // ƒLƒƒƒbƒVƒ…‚É‚È‚µ
-                Log.i(TAG, "ƒLƒƒƒbƒVƒ…‚È‚µ=" + item.id);
+                // ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«ãªã—
+                //Log.i(TAG, "ã‚­ãƒ£ãƒƒã‚·ãƒ¥ãªã—=" + item.id);
                 Bundle bundle = new Bundle();
                 bundle.putSerializable("item", item);
                 getSupportLoaderManager().initLoader(i, bundle, callbacks);
@@ -126,7 +226,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     /**
-     * ƒAƒCƒeƒ€‚Ì View ‚É Bitmap ‚ğƒZƒbƒg‚·‚é.
+     * ã‚¢ã‚¤ãƒ†ãƒ ã® View ã« Bitmap ã‚’ã‚»ãƒƒãƒˆã™ã‚‹.
      * @param item
      */
     private void setBitmap(ImageItem item) {
@@ -138,7 +238,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     /**
-     * ImageLoader ‚ÌƒR[ƒ‹ƒoƒbƒN.
+     * ImageLoader ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯.
      */
     private LoaderCallbacks<Bitmap> callbacks = new LoaderCallbacks<Bitmap>() {
         @Override
@@ -152,9 +252,9 @@ public class MainActivity extends FragmentActivity {
         public void onLoadFinished(Loader<Bitmap> loader, Bitmap bitmap) {
             int id = loader.getId();
             getSupportLoaderManager().destroyLoader(id);
-            // ƒƒ‚ƒŠƒLƒƒƒbƒVƒ…‚É“o˜^‚·‚é
+            // ãƒ¡ãƒ¢ãƒªã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«ç™»éŒ²ã™ã‚‹
             ImageItem item = ((ImageLoader) loader).item;
-            Log.i(TAG, "ƒLƒƒƒbƒVƒ…‚É“o˜^=" + item.id);
+            //Log.i(TAG, "ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«ç™»éŒ²=" + item.id);
             item.bitmap = bitmap;
             mLruCache.put("" + item.id, bitmap);
             setBitmap(item);

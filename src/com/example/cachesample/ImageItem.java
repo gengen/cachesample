@@ -5,14 +5,16 @@ import java.io.Serializable;
 import android.graphics.Bitmap;
 
 /**
- * ƒAƒCƒeƒ€‚Ìƒf[ƒ^.
+ * ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ‡ãƒ¼ã‚¿.
  */
 public class ImageItem implements Serializable {
-    /** ƒVƒŠƒAƒ‹ƒo[ƒWƒ‡ƒ“. */
+    /** ã‚·ãƒªã‚¢ãƒ«ãƒãƒ¼ã‚¸ãƒ§ãƒ³. */
     private static final long serialVersionUID = 1L;
     /** {@link Bitmap}. */
     public Bitmap bitmap;
-    /** ƒL[. */
+    /** ã‚­ãƒ¼. */
     //public String key;
     public int id;
+    
+    public String path;
 }
