@@ -8,19 +8,15 @@ import java.io.IOException;
 import java.util.List;
 
 import android.app.Activity;
-import android.app.ActivityManager;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.Loader;
 import android.support.v4.util.LruCache;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -54,17 +50,26 @@ public class MainActivity extends FragmentActivity {
         mGridView = (GridView)findViewById(R.id.gridview);
         mGridView.setNumColumns(2);
         
+        setDisplay();
+    }        
+    
+    private void setDisplay(){
         //複数選択設定
         mGridView.setChoiceMode(GridView.CHOICE_MODE_MULTIPLE_MODAL);
         mGridView.setMultiChoiceModeListener(new MultiChoiceModeListener(){
 			@Override
-			public boolean onActionItemClicked(ActionMode arg0, MenuItem arg1) {
+			public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 				Log.d(TAG, "onActionItemClicked");
+		    	switch (item.getItemId()) {
+		    	case R.id.action_delete:
+		    		Log.d(TAG, "delete");
+		    		delete();
+		    	}
 				return true;
 			}
 
 			@Override
-			public boolean onCreateActionMode(ActionMode arg0, Menu menu) {
+			public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 				Log.d(TAG, "onCreateActionMode");
 		        getMenuInflater().inflate(R.menu.main, menu);
 				return true;
@@ -110,7 +115,6 @@ public class MainActivity extends FragmentActivity {
 		}
 
 		ImageAdapter adapter = new ImageAdapter(this);
-		//ImageAdapter adapter = new ImageAdapter(this, android.R.layout.simple_selectable_list_item);
         mGridView.setAdapter(adapter);
         //Log.d("cachesample", "size = " + imageFileList.size());
         for (int i = 0; i < imageFileList.size(); i++) {
@@ -158,8 +162,28 @@ public class MainActivity extends FragmentActivity {
         });
 
         loadBitmap();
-    }
+    }	
+    
+    private void delete(){
+    	ImageAdapter adapter = (ImageAdapter)mGridView.getAdapter();
 
+    	//選択されているインデックス取得
+    	SparseBooleanArray positions = mGridView.getCheckedItemPositions();
+    	Log.d(TAG, "size = " + positions.size());
+    	for(int i=0; i<positions.size(); i++){
+        	int key = positions.keyAt(i);
+        	Log.d(TAG, "key = " + key);
+        	
+        	ImageItem item = adapter.getItem(key);
+        	Log.d(TAG, "path = " + item.path);
+        	
+        	File file = new File(item.path);
+        	file.delete();
+    	}
+    	
+    	setDisplay();
+    }
+    
     /**
      * 画像を読み込む.
      */
@@ -215,19 +239,6 @@ public class MainActivity extends FragmentActivity {
         }
     }
     
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-    	// Handle presses on the action bar items
-    	switch (item.getItemId()) {
-    	case R.id.action_delete:
-    		//delete();
-    		return true;
-
-    	default:
-    		return super.onOptionsItemSelected(item);
-    	}
-    }
-
     /**
      * ImageLoader のコールバック.
      */
@@ -254,4 +265,30 @@ public class MainActivity extends FragmentActivity {
         public void onLoaderReset(Loader<Bitmap> loader) {
         }
     };
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.activity_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+		Log.d(TAG, "onOptionsItemSelected");
+    	// Handle presses on the action bar items
+    	switch (item.getItemId()) {
+    	case R.id.action_deleteAll:
+    		deleteAll();
+    		return true;
+
+    	default:
+    		return super.onOptionsItemSelected(item);
+    	}
+    }
+    
+    private void deleteAll(){
+    	Log.d(TAG, "deleteALL");
+    }
+
 }

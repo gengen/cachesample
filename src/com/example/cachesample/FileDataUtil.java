@@ -85,7 +85,7 @@ public class FileDataUtil {
 
 		File sdcardRoot = getSdCardRootDirectory();
 		File loadDir = new File(sdcardRoot, /*context.getPackageName()*/"ContShooting");
-		Log.d("GallerySample", loadDir.getPath());
+		//Log.d("GallerySample", loadDir.getPath());
 		if (!loadDir.exists()) {
 			throw new IOException(String.format("アプリケーションの保存先が存在しません(%s)", loadDir));
 		}
