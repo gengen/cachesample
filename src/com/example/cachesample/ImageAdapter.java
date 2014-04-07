@@ -1,11 +1,12 @@
 package com.example.cachesample;
 
 import android.content.Context;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
+import android.widget.Checkable;
+import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 
@@ -13,7 +14,7 @@ import android.widget.ImageView;
  * {@link GridView} の {@link ArrayAdapter}.
  */
 public class ImageAdapter extends ArrayAdapter<ImageItem> {
-    private LayoutInflater mInflater;
+    Context mContext;
 
     /**
      * コンストラクタ.
@@ -22,7 +23,7 @@ public class ImageAdapter extends ArrayAdapter<ImageItem> {
     public ImageAdapter(Context context) {
         super(context, 0);
 
-        mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mContext = context;
     }
     
     public ImageAdapter(Context context, int layout){
@@ -33,25 +34,37 @@ public class ImageAdapter extends ArrayAdapter<ImageItem> {
     public View getView(int position, View convertView, ViewGroup parent) {
 
         ImageItem item = getItem(position);
-        
-        //ここを有効にすると画像が表示されずに欠けることがあるためコメントアウトする
-        //if (convertView == null) {
-        //convertView = mInflater.inflate(R.layout.grid_item, null);
-        //convertView.setLayoutParams(new AbsListView.LayoutParams(100, 100));
-        //ImageView view = (ImageView)convertView.findViewById(R.id.imageItem);
-        //} else {
-        //view = (ImageView) convertView;
-        //}
-        
-        //view = new ImageView(getContext());
 
         ImageView view = new ImageView(getContext());
         view.setLayoutParams(new AbsListView.LayoutParams(100, 100));
         view.setImageBitmap(item.bitmap);
         view.setTag(item);
+        
+        CheckableLayout l = new CheckableLayout(mContext);
+        l.setLayoutParams(new GridView.LayoutParams(GridView.LayoutParams.WRAP_CONTENT, GridView.LayoutParams.WRAP_CONTENT));      
+        l.addView(view);
 
-        return view;
-        //return convertView;
+        return l;
     }
+    
+    public class CheckableLayout extends FrameLayout implements Checkable {
+        private boolean mChecked;
 
+        public CheckableLayout(Context context) {
+            super(context);
+        }
+
+        public void setChecked(boolean checked) {
+            mChecked = checked;
+            setBackgroundDrawable(checked ? getResources().getDrawable(R.drawable.blue) : null);
+        }
+
+        public boolean isChecked() {
+            return mChecked;
+        }
+
+        public void toggle() {
+            setChecked(!mChecked);
+        }
+    }
 }

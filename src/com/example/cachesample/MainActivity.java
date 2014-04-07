@@ -64,8 +64,9 @@ public class MainActivity extends FragmentActivity {
 			}
 
 			@Override
-			public boolean onCreateActionMode(ActionMode arg0, Menu arg1) {
+			public boolean onCreateActionMode(ActionMode arg0, Menu menu) {
 				Log.d(TAG, "onCreateActionMode");
+		        getMenuInflater().inflate(R.menu.main, menu);
 				return true;
 			}
 
@@ -85,15 +86,7 @@ public class MainActivity extends FragmentActivity {
 				Log.d(TAG, "onItemCheckedStateChanged");
 				int count = mGridView.getCheckedItemCount();
 				Log.d(TAG, "check count = " + count);
-				
-				ImageAdapter adapter = (ImageAdapter)mGridView.getAdapter();
-				ImageItem item = adapter.getItem(pos);
-				ImageView view = (ImageView)mGridView.findViewWithTag(item);
-				//TODO なぜか最初に選択した項目が黒くならない。要調査。
-				//TODO ApiDemosのViewsのGridのSelection Modeを参考に実装すること。
-				view.setBackgroundColor(Color.BLACK);
 			}
-        	
         });
 
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
@@ -164,21 +157,6 @@ public class MainActivity extends FragmentActivity {
             }
         });
 
-        /*
-        Thread thread = new Thread(new Runnable(){
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				Looper.prepare();
-				loadBitmap();
-			}
-        });
-        thread.start();
-        */
         loadBitmap();
     }
 
@@ -235,6 +213,19 @@ public class MainActivity extends FragmentActivity {
             view.setImageBitmap(item.bitmap);
             mGridView.invalidateViews();
         }
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	// Handle presses on the action bar items
+    	switch (item.getItemId()) {
+    	case R.id.action_delete:
+    		//delete();
+    		return true;
+
+    	default:
+    		return super.onOptionsItemSelected(item);
+    	}
     }
 
     /**
