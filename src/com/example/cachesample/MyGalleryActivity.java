@@ -32,10 +32,10 @@ import android.widget.ImageView;
 /**
  * GridView を表示する {@link Activity}.
  */
-public class MainActivity extends FragmentActivity {
+public class MyGalleryActivity extends FragmentActivity {
 
     /** ログ出力用のタグ. */
-    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String TAG = MyGalleryActivity.class.getSimpleName();
 
     /** メモリキャッシュクラス. */
     private LruCache<String, Bitmap> mLruCache;
